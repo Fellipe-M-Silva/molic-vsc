@@ -37,6 +37,10 @@
     {
       "name": "punctuation.section.braces.molic",
       "match": "[{}]"
+    },
+    {
+      "name": "keyword.control.molic",
+      "match": "\\b(scene|transition|ubiq|proc|recovery)\\b"
     }
   ]
 }

@@ -50,7 +50,16 @@ var MoLICPanel = class _MoLICPanel {
   constructor(panel, extensionUri) {
     this._panel = panel;
     this._extensionUri = extensionUri;
-    this._update();
+    this._panel.webview.html = this._getHtmlForWebview(this._panel.webview);
+    this._panel.webview.onDidReceiveMessage(
+      (message) => {
+        if (message.command === "ready") {
+          this._update();
+        }
+      },
+      null,
+      this._disposables
+    );
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
     vscode.workspace.onDidChangeTextDocument(
       (e) => {
@@ -58,24 +67,20 @@ var MoLICPanel = class _MoLICPanel {
           if (this._updateTimeout) {
             clearTimeout(this._updateTimeout);
           }
-          this._updateTimeout = setTimeout(() => {
-            this._update();
-          }, 300);
+          this._updateTimeout = setTimeout(() => this._update(), 300);
         }
       },
       null,
       this._disposables
     );
     vscode.window.onDidChangeActiveTextEditor(
-      () => {
-        this._update();
-      },
+      () => this._update(),
       null,
       this._disposables
     );
   }
   static createOrShow(extensionUri) {
-    const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : void 0;
+    const column = vscode.window.activeTextEditor?.viewColumn;
     if (_MoLICPanel.currentPanel) {
       _MoLICPanel.currentPanel._panel.reveal(column);
       return;
@@ -93,10 +98,9 @@ var MoLICPanel = class _MoLICPanel {
   }
   _update() {
     const editor = vscode.window.activeTextEditor;
-    if (!editor) {
+    if (!editor || !this._panel.visible) {
       return;
     }
-    this._panel.webview.html = this._getHtmlForWebview(this._panel.webview);
     this._panel.webview.postMessage({
       command: "render",
       text: editor.document.getText()
@@ -108,13 +112,15 @@ var MoLICPanel = class _MoLICPanel {
     );
     const nonce = getNonce();
     return `<!DOCTYPE html>
-    <html>
+    <html lang="pt-br">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}' 'unsafe-eval'; style-src ${webview.cspSource} 'unsafe-inline';">
         <style>
-            body { font-family: sans-serif; padding: 20px; color: var(--vscode-editor-foreground); background-color: var(--vscode-editor-background); }
-            #app { width: 100%; height: 100vh; }
+            body { font-family: sans-serif; padding: 20px; color: var(--vscode-editor-foreground); background-color: var(--vscode-editor-background); overflow: hidden; }
+            #app { width: 100%; height: 100vh; overflow: auto; }
+            svg { max-width: 100%; height: auto; shape-rendering: geometricPrecision; }
         </style>
     </head>
     <body>

@@ -2,12 +2,19 @@ import mermaid from "mermaid";
 
 mermaid.initialize({
 	startOnLoad: false,
-	theme: "dark",
+	theme: "base",
 	securityLevel: "loose",
+	themeVariables: {
+		primaryColor: "#ffffff",
+		primaryBorderColor: "#0a0a0a",
+		lineColor: "#0a0a0a",
+		secondaryColor: "#cccccc",
+		tertiaryColor: "#0a0a0a",
+	},
 	flowchart: {
 		useMaxWidth: true,
 		htmlLabels: true,
-		curve: "basis",
+		curve: "linear",
 	},
 });
 
@@ -40,30 +47,59 @@ async function renderDiagram(text: string) {
 function parseMoLICtoMermaid(text: string): string {
 	let diagram = "graph TD\n";
 
+	// Definição de estilos
+	diagram +=
+		"classDef sceneStyle fill:#fff,stroke:#000,stroke-width:2px,rx:10,ry:10;\n";
+	diagram +=
+		"classDef ubiqStyle fill:#e0e0e0,stroke:#000,stroke-width:2px,rx:5,ry:5;\n";
+	diagram += "classDef systemProc fill:#000,color:#fff,stroke:#000;\n";
+
 	const cleanText = text.replace(/\/\/.*$/gm, "");
+	let match: RegExpExecArray | null;
 
-	const sceneRegex = /scene\s+(\w+)\s*{([^}]*)}/g;
-	const transitionRegex = /transition\s+(\w+)\s*->\s*(\w+)/g;
+	// --- 1. ACESSOS UBÍQUOS (Declarados primeiro para garantir o topo) ---
+	const ubiqRegex = /ubiq\s+(\w+)\s*{([^}]*)}/g;
+	const ubiqNames: string[] = [];
 
-	let match;
-	let hasContent = false;
-
-	while ((match = sceneRegex.exec(cleanText)) !== null) {
-		hasContent = true;
+	while ((match = ubiqRegex.exec(cleanText)) !== null) {
 		const [_, name, content] = match;
-		const dialogueMatch = content.match(/(?:s|u):\s*"([^"]*)"/);
-		const label = dialogueMatch ? dialogueMatch[1] : name;
-		diagram += `    ${name}(["${label}"])\n`;
+		const label = content.match(/"([^"]*)"/)?.[1] || " ";
+		diagram += `    ${name}["${label}"]:::ubiqStyle\n`;
+		ubiqNames.push(name);
 	}
 
-	while ((match = transitionRegex.exec(cleanText)) !== null) {
-		hasContent = true;
-		const [_, from, to] = match;
-		diagram += `    ${from} --> ${to}\n`;
+	// Link invisível para alinhamento horizontal no topo
+	if (ubiqNames.length > 1) {
+		diagram += "    " + ubiqNames.join(" ~~~ ") + "\n";
 	}
 
-	if (!hasContent) {
-		diagram += "    Empty((Digite uma 'scene' para começar))\n";
+	// --- 2. CENAS (Declaradas depois dos ubíquos) ---
+	const sceneRegex = /scene\s+(\w+)\s*{([^}]*)}/g;
+	while ((match = sceneRegex.exec(cleanText)) !== null) {
+		const [_, name, content] = match;
+		const dialogue = content.match(/(?:s|u):\s*"([^"]*)"/)?.[1] || name;
+		diagram += `    ${name}["${dialogue}"]:::sceneStyle\n`;
+	}
+
+	// --- 3. PROCESSOS DE SISTEMA ---
+	const procRegex = /proc\s+(\w+)/g;
+	while ((match = procRegex.exec(cleanText)) !== null) {
+		diagram += `    ${match[1]}[" "]:::systemProc\n`;
+	}
+
+	// --- 4. TRANSIÇÕES E RECUPERAÇÃO (Sempre por último) ---
+	const transRegex = /transition\s+(\w+)\s*->\s*(\w+)(?:\s+"([^"]*)")?/g;
+	while ((match = transRegex.exec(cleanText)) !== null) {
+		const [_, from, to, msg] = match;
+		const label = msg ? `|"${msg}"|` : "";
+		diagram += `    ${from} -->${label} ${to}\n`;
+	}
+
+	const recoveryRegex = /recovery\s+(\w+)\s*->\s*(\w+)(?:\s+"([^"]*)")?/g;
+	while ((match = recoveryRegex.exec(cleanText)) !== null) {
+		const [_, from, to, msg] = match;
+		const label = msg ? `|"${msg}"|` : "";
+		diagram += `    ${from} -.->${label} ${to}\n`;
 	}
 
 	return diagram;
