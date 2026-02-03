@@ -6,6 +6,11 @@ export function activate(context: vscode.ExtensionContext) {
 			MoLICPanel.createOrShow(context.extensionUri);
 		}),
 	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand("molic.export", () => {
+			MoLICPanel.currentPanel?.export(); // Você precisará criar esse método público
+		}),
+	);
 }
 
 class MoLICPanel {
@@ -55,6 +60,30 @@ class MoLICPanel {
 			null,
 			this._disposables,
 		);
+
+		this._panel.webview.onDidReceiveMessage(
+			async (message) => {
+				switch (message.command) {
+					case "saveFile":
+						const uri = await vscode.window.showSaveDialog({
+							filters: { Images: ["svg"] },
+							defaultUri: vscode.Uri.file("diagrama-molic.svg"),
+						});
+
+						if (uri) {
+							const encoder = new TextEncoder();
+							const data = encoder.encode(message.text);
+							await vscode.workspace.fs.writeFile(uri, data);
+							vscode.window.showInformationMessage(
+								"Diagrama exportado com sucesso!",
+							);
+						}
+						return;
+				}
+			},
+			null,
+			this._disposables,
+		);
 	}
 
 	public static createOrShow(extensionUri: vscode.Uri) {
@@ -97,7 +126,6 @@ class MoLICPanel {
 		);
 		const nonce = getNonce();
 
-		// CSP ajustada: 'unsafe-inline' é necessário para os estilos dinâmicos do Mermaid
 		return `<!DOCTYPE html>
     <html lang="pt-br">
     <head>
@@ -105,12 +133,35 @@ class MoLICPanel {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}' 'unsafe-eval'; style-src ${webview.cspSource} 'unsafe-inline';">
         <style>
-            body { font-family: sans-serif; padding: 20px; color: var(--vscode-editor-foreground); background-color: var(--vscode-editor-background); overflow: hidden; }
-            #app { width: 100%; height: 100vh; overflow: auto; }
-            svg { max-width: 100%; height: auto; shape-rendering: geometricPrecision; }
+          body { 
+						font-family: sans-serif; 
+						padding: 20px; 
+						color: var(--vscode-editor-foreground); 
+						background-color: var(--vscode-editor-background); 
+						overflow: hidden;
+						/* Impede a seleção de texto em toda a webview */
+						user-select: none;
+						-webkit-user-select: none; /* Para compatibilidade com o motor do VS Code */
+					}
+					#app { 
+						width: 100%; 
+						height: 90vh; 
+						overflow: auto; 
+						margin-top: 40px; 
+					}
+					#export-btn { 
+						position: fixed; top: 10px; right: 10px; z-index: 100; 
+						padding: 5px 12px; cursor: pointer;
+						background: var(--vscode-button-background);
+						color: var(--vscode-button-foreground);
+						border: none; border-radius: 2px;
+					}
+					#export-btn:hover { background: var(--vscode-button-hoverBackground); }
+					svg { max-width: 100%; height: auto; shape-rendering: geometricPrecision; }
         </style>
     </head>
     <body>
+        <button id="export-btn">Exportar SVG</button>
         <div id="app">Aguardando código MoLIC...</div>
         <script nonce="${nonce}" src="${scriptUri}"></script>
     </body>
@@ -126,6 +177,10 @@ class MoLICPanel {
 				x.dispose();
 			}
 		}
+	}
+
+	public export() {
+		this._panel.webview.postMessage({ command: "export" });
 	}
 }
 

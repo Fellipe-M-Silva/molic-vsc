@@ -20,6 +20,10 @@
       {
         "command": "molic.preview",
         "title": "MoLIC Preview"
+      },
+      {
+      "command": "molic.export",
+      "title": "MoLIC: Exportar para SVG"
       }
     ],
     "languages": [

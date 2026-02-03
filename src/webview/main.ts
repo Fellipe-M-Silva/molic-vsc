@@ -1,4 +1,6 @@
 import mermaid from "mermaid";
+declare function acquireVsCodeApi(): any;
+const vscode = acquireVsCodeApi();
 
 mermaid.initialize({
 	startOnLoad: false,
@@ -104,3 +106,38 @@ function parseMoLICtoMermaid(text: string): string {
 
 	return diagram;
 }
+
+vscode.postMessage({ command: "ready" });
+
+function exportSVG() {
+	const svgElement = document.querySelector("#app svg");
+	if (svgElement) {
+		// Garante que o XML do SVG seja válido para exportação
+		let svgData = svgElement.outerHTML;
+		if (!svgData.includes('xmlns="http://www.w3.org/2000/svg"')) {
+			svgData = svgData.replace(
+				"<svg",
+				'<svg xmlns="http://www.w3.org/2000/svg"',
+			);
+		}
+
+		vscode.postMessage({
+			command: "saveFile",
+			text: svgData,
+		});
+	} else {
+		console.error("SVG não encontrado para exportação.");
+	}
+}
+
+// Escuta o clique
+document.getElementById("export-btn")?.addEventListener("click", () => {
+	exportSVG();
+});
+
+// Listener para o comando de exportação via Ctrl+Shift+P
+window.addEventListener("message", (event) => {
+	if (event.data.command === "export") {
+		exportSVG();
+	}
+});
