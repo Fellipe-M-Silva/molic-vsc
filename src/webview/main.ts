@@ -4,18 +4,11 @@ const vscode = acquireVsCodeApi();
 
 mermaid.initialize({
 	startOnLoad: false,
-	theme: "base",
 	securityLevel: "loose",
-	themeVariables: {
-		primaryColor: "#ffffff",
-		primaryBorderColor: "#0a0a0a",
-		lineColor: "#0a0a0a",
-		secondaryColor: "#cccccc",
-		tertiaryColor: "#0a0a0a",
-	},
+	theme: "default",
 	flowchart: {
-		useMaxWidth: true,
 		htmlLabels: true,
+		useMaxWidth: true,
 		curve: "linear",
 	},
 });
@@ -33,75 +26,77 @@ window.addEventListener("message", (event) => {
 async function renderDiagram(text: string) {
 	try {
 		const mermaidSyntax = parseMoLICtoMermaid(text);
-
-		appElement.innerHTML = `<pre class="mermaid">${mermaidSyntax}</pre>`;
-
-		await mermaid.run();
-	} catch (err) {
-		appElement.innerHTML = `
-            <div style="color: var(--vscode-errorForeground); padding: 10px; border: 1px solid red;">
-                <h3>Erro na Modelagem MoLIC:</h3>
-                <pre style="white-space: pre-wrap;">${err}</pre>
-            </div>`;
+		const id = "mermaid-" + Math.random().toString(36).substr(2, 9);
+		const { svg } = await mermaid.render(id, mermaidSyntax);
+		appElement.innerHTML = `<div id="graphDiv">${svg}</div>`;
+	} catch (err: any) {
+		appElement.innerHTML = `<div style="color:red">Erro de Sintaxe: ${err.message}</div>`;
 	}
 }
 
 function parseMoLICtoMermaid(text: string): string {
 	let diagram = "graph TD\n";
 
-	// Definição de estilos
-	diagram +=
-		"classDef sceneStyle fill:#fff,stroke:#000,stroke-width:2px,rx:10,ry:10;\n";
-	diagram +=
-		"classDef ubiqStyle fill:#e0e0e0,stroke:#000,stroke-width:2px,rx:5,ry:5;\n";
-	diagram += "classDef systemProc fill:#000,color:#fff,stroke:#000;\n";
+	// Definições de estilo fixas (sem variáveis CSS para não bugar o parser)
+	diagram += `classDef sceneStyle fill:#fff,stroke:#333,stroke-width:2px,rx:10,ry:10;\n`;
+	diagram += `classDef ubiqStyle fill:#e0e0e0,stroke:#333,stroke-width:2px,rx:30,ry:30;\n`;
+	diagram += `classDef systemProc fill:#333,stroke:#333,rx:0,ry:0;\n`;
 
 	const cleanText = text.replace(/\/\/.*$/gm, "");
-	let match: RegExpExecArray | null;
+	let match;
 
-	// --- 1. ACESSOS UBÍQUOS (Declarados primeiro para garantir o topo) ---
-	const ubiqRegex = /ubiq\s+(\w+)\s*{([^}]*)}/g;
-	const ubiqNames: string[] = [];
-
+	// 1. Ubíquos
+	const ubiqRegex = /ubiq\s+(\w+)/g;
 	while ((match = ubiqRegex.exec(cleanText)) !== null) {
-		const [_, name, content] = match;
-		const label = content.match(/"([^"]*)"/)?.[1] || " ";
-		diagram += `    ${name}["${label}"]:::ubiqStyle\n`;
-		ubiqNames.push(name);
+		// Adicionamos espaços em branco para esticar a pílula
+		diagram += `    ${match[1]}["&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"]:::ubiqStyle\n`;
 	}
 
-	// Link invisível para alinhamento horizontal no topo
-	if (ubiqNames.length > 1) {
-		diagram += "    " + ubiqNames.join(" ~~~ ") + "\n";
-	}
-
-	// --- 2. CENAS (Declaradas depois dos ubíquos) ---
+	// 2. Cenas (Figura 9.16)
 	const sceneRegex = /scene\s+(\w+)\s*{([^}]*)}/g;
 	while ((match = sceneRegex.exec(cleanText)) !== null) {
 		const [_, name, content] = match;
-		const dialogue = content.match(/(?:s|u):\s*"([^"]*)"/)?.[1] || name;
-		diagram += `    ${name}["${dialogue}"]:::sceneStyle\n`;
+
+		// NOVO REGEX: Permite letras acentuadas (A-zÀ-ÿ)
+		const title = (
+			content.match(/title:\s*"([^"]*)"/)?.[1] || name
+		).replace(/[^a-zA-Z0-9À-ÿ ]/g, "");
+
+		const detailsMatch = content.match(/details:\s*{([^}]*)}/s);
+
+		// Estrutura HTML robusta para o Mermaid
+		let label = `<div style='display:block; min-width:100px;'>`;
+		label += `<div style='font-weight:bold; margin-bottom:4px;'>${title}</div>`;
+
+		if (detailsMatch) {
+			const lines = detailsMatch[1]
+				.split("\n")
+				.map((l) => l.trim().replace(/[\[\]\(\)\{\}\"\|]/g, ""))
+				.filter((l) => l.length > 0 && !l.startsWith("details"));
+
+			if (lines.length > 0) {
+				label += `<div style='border-top:1px solid #333; margin:4px 0;'></div>`;
+				label += `<div style='font-size:11px; text-align:left;'>${lines.join("<br/>")}</div>`;
+			}
+		}
+		label += `</div>`;
+
+		// Remove quebras de linha reais para não quebrar a sintaxe do Mermaid
+		const finalLabel = label.replace(/\n/g, " ").replace(/\s+/g, " ");
+		diagram += `    ${name}["${finalLabel}"]:::sceneStyle\n`;
 	}
 
-	// --- 3. PROCESSOS DE SISTEMA ---
+	// 3. Processos e Transições (mantendo sua lógica)
 	const procRegex = /proc\s+(\w+)/g;
 	while ((match = procRegex.exec(cleanText)) !== null) {
 		diagram += `    ${match[1]}[" "]:::systemProc\n`;
 	}
 
-	// --- 4. TRANSIÇÕES E RECUPERAÇÃO (Sempre por último) ---
 	const transRegex = /transition\s+(\w+)\s*->\s*(\w+)(?:\s+"([^"]*)")?/g;
 	while ((match = transRegex.exec(cleanText)) !== null) {
 		const [_, from, to, msg] = match;
-		const label = msg ? `|"${msg}"|` : "";
-		diagram += `    ${from} -->${label} ${to}\n`;
-	}
-
-	const recoveryRegex = /recovery\s+(\w+)\s*->\s*(\w+)(?:\s+"([^"]*)")?/g;
-	while ((match = recoveryRegex.exec(cleanText)) !== null) {
-		const [_, from, to, msg] = match;
-		const label = msg ? `|"${msg}"|` : "";
-		diagram += `    ${from} -.->${label} ${to}\n`;
+		const cleanMsg = msg ? `|"${msg.replace(/"/g, "'")}"|` : "";
+		diagram += `    ${from} -->${cleanMsg} ${to}\n`;
 	}
 
 	return diagram;

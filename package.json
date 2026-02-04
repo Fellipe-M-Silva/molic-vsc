@@ -36,7 +36,11 @@
         "extensions": [
           ".molic"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon" : {
+          "light": "./resources/molic-icon-light.svg",
+          "dark": "./resources/molic-icon-dark.svg"
+        }
       }
     ],
     "grammars": [
@@ -45,6 +49,12 @@
         "scopeName": "source.molic",
         "path": "./syntaxes/molic.tmLanguage.json"
       }
+    ],
+    "snippets": [
+    {
+      "language": "molic",
+      "path": "./snippets/molic.json"
+    }
     ]
   },
   "scripts": {

@@ -1,0 +1,51 @@
+{
+  "Nova Cena": {
+    "prefix": "scene",
+    "body": [
+      "scene ${1:ID_Cena} {",
+      "\ts: \"${2:fala do sistema}\"",
+      "}"
+    ],
+    "description": "Cria uma nova cena MoLIC"
+  },
+  "Cena Detalhada": {
+    "prefix": "scene",
+    "body": [
+      "scene ${1:ID} {",
+      "\ttitle: \"${2:Título da Cena}\"",
+      "\tdetails: {",
+      "\t\t\"${3:signo}\": \"${4:descrição}\"",
+      "\t}",
+      "}"
+    ],
+    "description": "Cria uma cena MoLIC com título e detalhes (Figura 9.16)"
+  },
+  "Acesso Ubíquo": {
+    "prefix": "ubiq",
+    "body": [
+      "ubiq ${1:ID}"
+    ],
+    "description": "Cria um acesso ubíquo (Pílula)"
+  },
+  "Processo de Sistema": {
+    "prefix": "proc",
+    "body": [
+      "proc ${1:ID_Processo}"
+    ],
+    "description": "Cria um processo de sistema (quadrado preto)"
+  },
+  "Transição de Diálogo": {
+    "prefix": "trans",
+    "body": [
+      "transition ${1:De} -> ${2:Para} \"${3:u: mensagem}\""
+    ],
+    "description": "Cria uma transição de diálogo normal"
+  },
+  "Transição de Recuperação": {
+    "prefix": "rec",
+    "body": [
+      "recovery ${1:De} -> ${2:Para} \"${3:u: erro}\""
+    ],
+    "description": "Cria uma transição de recuperação (tracejada)"
+  }
+}

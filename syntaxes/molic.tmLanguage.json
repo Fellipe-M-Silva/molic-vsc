@@ -1,46 +1,26 @@
 {
-  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "MoLIC",
   "scopeName": "source.molic",
   "patterns": [
+    {
+      "name": "keyword.control.molic",
+      "match": "\\b(scene|ubiq|proc|transition|recovery|title|details)\\b"
+    },
+    {
+      "name": "punctuation.section.embedded.molic",
+      "match": "[{}]"
+    },
+    {
+      "name": "string.quoted.double.molic",
+      "begin": "\"",
+      "end": "\""
+    },
     {
       "name": "comment.line.double-slash.molic",
       "match": "//.*$"
     },
     {
-      "name": "keyword.control.molic",
-      "match": "\\b(scene|transition)\\b"
-    },
-    {
-      "name": "variable.parameter.molic",
-      "match": "\\b(u|s):"
-    },
-    {
-      "name": "string.quoted.double.molic",
-      "begin": "\"",
-      "end": "\"",
-      "patterns": [
-        {
-          "name": "constant.character.escape.molic",
-          "match": "\\\\."
-        }
-      ]
-    },
-    {
-      "name": "entity.name.section.molic",
-      "match": "\\b[A-Z][a-zA-Z0-9_]*\\b"
-    },
-    {
-      "name": "keyword.operator.molic",
-      "match": "->"
-    },
-    {
-      "name": "punctuation.section.braces.molic",
-      "match": "[{}]"
-    },
-    {
-      "name": "keyword.control.molic",
-      "match": "\\b(scene|transition|ubiq|proc|recovery)\\b"
+        "name": "entity.name.tag.molic",
+        "match": "\\b(title|details)(?=\\s*:)"
     }
   ]
 }

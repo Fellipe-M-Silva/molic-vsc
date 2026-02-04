@@ -131,39 +131,37 @@ class MoLICPanel {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}' 'unsafe-eval'; style-src ${webview.cspSource} 'unsafe-inline';">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}' 'unsafe-eval'; style-src ${webview.cspSource} 'unsafe-inline'; connect-src ${webview.cspSource} https:;">
         <style>
-          body { 
-						font-family: sans-serif; 
-						padding: 20px; 
-						color: var(--vscode-editor-foreground); 
-						background-color: var(--vscode-editor-background); 
-						overflow: hidden;
-						/* Impede a seleção de texto em toda a webview */
-						user-select: none;
-						-webkit-user-select: none; /* Para compatibilidade com o motor do VS Code */
-					}
-					#app { 
-						width: 100%; 
-						height: 90vh; 
-						overflow: auto; 
-						margin-top: 40px; 
-					}
-					#export-btn { 
-						position: fixed; top: 10px; right: 10px; z-index: 100; 
-						padding: 5px 12px; cursor: pointer;
-						background: var(--vscode-button-background);
-						color: var(--vscode-button-foreground);
-						border: none; border-radius: 2px;
-					}
-					#export-btn:hover { background: var(--vscode-button-hoverBackground); }
-					svg { max-width: 100%; height: auto; shape-rendering: geometricPrecision; }
-        </style>
+    body { 
+        font-family: var(--vscode-font-family, sans-serif); 
+        padding: 20px; 
+        color: var(--vscode-editor-foreground); 
+        background-color: var(--vscode-editor-background); 
+				user-select: none;
+    }
+
+    #export-btn { 
+        position: fixed; top: 10px; right: 10px; z-index: 100; 
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none; padding: 8px; cursor: pointer;
+    }
+		.sceneStyle .label, .molic-scene {
+            color: #000 !important;
+        }
+    /* Força o fundo branco apenas dentro do diagrama para garantir contraste no TCC */
+    #graphDiv {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+    }
+</style>
     </head>
     <body>
-        <button id="export-btn">Exportar SVG</button>
-        <div id="app">Aguardando código MoLIC...</div>
-        <script nonce="${nonce}" src="${scriptUri}"></script>
+			<button id="export-btn">Exportar SVG</button>
+			<div id="app">Aguardando código MoLIC...</div>
+			<script nonce="${nonce}" src="${scriptUri}"></script>
     </body>
     </html>`;
 	}
