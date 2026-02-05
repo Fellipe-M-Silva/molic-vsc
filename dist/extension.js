@@ -147,26 +147,44 @@ var MoLICPanel = class _MoLICPanel {
         <style>
     body { 
         font-family: var(--vscode-font-family, sans-serif); 
-        padding: 20px; 
-        color: var(--vscode-editor-foreground); 
-        background-color: var(--vscode-editor-background); 
-				user-select: none;
+				font-size: var(--vscode-font-size, 14px);
+				background: var(--vscode-editor-background);
+        padding: 0; margin: 0;
+        
     }
 
-    #export-btn { 
-        position: fixed; top: 10px; right: 10px; z-index: 100; 
-        background: var(--vscode-button-background);
-        color: var(--vscode-button-foreground);
-        border: none; padding: 8px; cursor: pointer;
+    /* \xC1rea do Diagrama: Fundo branco fixo para n\xE3o bugar a visualiza\xE7\xE3o */
+    #app {
+        overflow: auto; /* Scroll aparece aqui quando o papel acaba */
+        background-color: var(--vscode-editor-background); /* Cor de fundo para destacar o papel */
+				height: 100vh;
+        width: 100vw;
+        box-sizing: border-box;
     }
-		.sceneStyle .label, .molic-scene {
-            color: #000 !important;
-        }
-    /* For\xE7a o fundo branco apenas dentro do diagrama para garantir contraste no TCC */
+
     #graphDiv {
         background: white;
-        padding: 20px;
-        border-radius: 8px;
+        padding: 40px;
+        border-radius: 4px;
+        
+        /* O SEGREDO EST\xC1 AQUI: */
+        display: inline-block; 
+        min-width: max-content; 
+        min-height: max-content;
+    }
+
+		svg {
+        max-width: none !important;
+        display: block;
+    }
+
+    /* Bot\xE3o que respeita o tema */
+    #export-btn { 
+        position: fixed; top: 10px; right: 20px; z-index: 100; 
+        padding: 8px 16px; cursor: pointer;
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none; border-radius: 2px;
     }
 </style>
     </head>

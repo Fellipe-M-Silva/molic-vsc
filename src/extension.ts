@@ -8,7 +8,7 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand("molic.export", () => {
-			MoLICPanel.currentPanel?.export(); // Você precisará criar esse método público
+			MoLICPanel.currentPanel?.export();
 		}),
 	);
 }
@@ -24,10 +24,8 @@ class MoLICPanel {
 		this._panel = panel;
 		this._extensionUri = extensionUri;
 
-		// Define o HTML uma única vez para estabilizar o Service Worker
 		this._panel.webview.html = this._getHtmlForWebview(this._panel.webview);
 
-		// Primeira carga: Aguarda a webview estar pronta para receber a mensagem
 		this._panel.webview.onDidReceiveMessage(
 			(message) => {
 				if (message.command === "ready") {
@@ -40,7 +38,6 @@ class MoLICPanel {
 
 		this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
-		// Monitora mudanças no texto com o Debounce de 300ms
 		vscode.workspace.onDidChangeTextDocument(
 			(e) => {
 				if (e.document === vscode.window.activeTextEditor?.document) {
@@ -54,7 +51,6 @@ class MoLICPanel {
 			this._disposables,
 		);
 
-		// Atualiza se o usuário trocar de aba de arquivo
 		vscode.window.onDidChangeActiveTextEditor(
 			() => this._update(),
 			null,
@@ -113,7 +109,6 @@ class MoLICPanel {
 			return;
 		}
 
-		// Envia o texto para a "cozinha" (webview) processar
 		this._panel.webview.postMessage({
 			command: "render",
 			text: editor.document.getText(),
@@ -135,26 +130,44 @@ class MoLICPanel {
         <style>
     body { 
         font-family: var(--vscode-font-family, sans-serif); 
-        padding: 20px; 
-        color: var(--vscode-editor-foreground); 
-        background-color: var(--vscode-editor-background); 
-				user-select: none;
+				font-size: var(--vscode-font-size, 14px);
+				background: var(--vscode-editor-background);
+        padding: 0; margin: 0;
+        
     }
 
-    #export-btn { 
-        position: fixed; top: 10px; right: 10px; z-index: 100; 
-        background: var(--vscode-button-background);
-        color: var(--vscode-button-foreground);
-        border: none; padding: 8px; cursor: pointer;
+    /* Área do Diagrama: Fundo branco fixo para não bugar a visualização */
+    #app {
+        overflow: auto; /* Scroll aparece aqui quando o papel acaba */
+        background-color: var(--vscode-editor-background); /* Cor de fundo para destacar o papel */
+				height: 100vh;
+        width: 100vw;
+        box-sizing: border-box;
     }
-		.sceneStyle .label, .molic-scene {
-            color: #000 !important;
-        }
-    /* Força o fundo branco apenas dentro do diagrama para garantir contraste no TCC */
+
     #graphDiv {
         background: white;
-        padding: 20px;
-        border-radius: 8px;
+        padding: 40px;
+        border-radius: 4px;
+        
+        /* O SEGREDO ESTÁ AQUI: */
+        display: inline-block; 
+        min-width: max-content; 
+        min-height: max-content;
+    }
+
+		svg {
+        max-width: none !important;
+        display: block;
+    }
+
+    /* Botão que respeita o tema */
+    #export-btn { 
+        position: fixed; top: 10px; right: 20px; z-index: 100; 
+        padding: 8px 16px; cursor: pointer;
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none; border-radius: 2px;
     }
 </style>
     </head>
